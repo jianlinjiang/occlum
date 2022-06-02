@@ -81,6 +81,7 @@ mod events;
 mod exception;
 mod fs;
 mod interrupt;
+mod mage;
 mod misc;
 mod net;
 mod process;
@@ -91,6 +92,5 @@ mod time;
 mod untrusted;
 mod util;
 mod vm;
-mod mage;
 // Export ECalls
 pub use entry::*;

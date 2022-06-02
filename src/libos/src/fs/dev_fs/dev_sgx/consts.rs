@@ -70,13 +70,13 @@ pub const SGX_CMD_NUM_VER_DCAP_QUOTE: u32 = StructuredIoctlNum::new::<IoctlVerDC
 )
 .as_u32();
 
-pub const SGX_CMD_NUM_DERIVE_MAGE_MEASUREMENT: u32 = 
-StructuredIoctlNum::new::<IoctlMageDeriveMrenclaveArg>(
-    11,
-    SGX_MAGIC_CHAR,
-    StructuredIoctlArgType::InputOutput,
-)
-.as_u32();
+pub const SGX_CMD_NUM_DERIVE_MAGE_MEASUREMENT: u32 =
+    StructuredIoctlNum::new::<IoctlMageDeriveMrenclaveArg>(
+        11,
+        SGX_MAGIC_CHAR,
+        StructuredIoctlArgType::InputOutput,
+    )
+    .as_u32();
 
 /// A magical number that distinguishes SGX ioctls for other ioctls
 const SGX_MAGIC_CHAR: u8 = 's' as u8;

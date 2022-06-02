@@ -5,9 +5,9 @@ use super::*;
 mod consts;
 
 use self::consts::*;
+use mage::*;
 use util::mem_util::from_user::*;
 use util::sgx::*;
-use mage::*;
 extern "C" {
     static EDMM_supported: i32;
 }
@@ -250,13 +250,10 @@ impl DevSgx {
                 let arg = nonbuiltin_cmd.arg_mut::<IoctlMageDeriveMrenclaveArg>()?;
                 let mage_idx = arg.mage_idx;
                 let ret = sgx_mage_derive_measurement(mage_idx);
-                match ret{
+                match ret {
                     Ok(hash) => {
                         let mrenclave_slice = Some(unsafe {
-                            std::slice::from_raw_parts_mut(
-                                arg.mrencalve,
-                                SHA256_DIGEST_SIZE
-                            )
+                            std::slice::from_raw_parts_mut(arg.mrencalve, SHA256_DIGEST_SIZE)
                         });
                         if let Some(slice) = mrenclave_slice {
                             slice.copy_from_slice(&hash[..]);
@@ -328,6 +325,6 @@ struct IoctlVerDCAPQuoteArg {
 
 #[repr(C)]
 struct IoctlMageDeriveMrenclaveArg {
-    mage_idx :  usize,                  // Input 
-    mrencalve:  *mut u8  // Output
+    mage_idx: usize,    // Input
+    mrencalve: *mut u8, // Output
 }
