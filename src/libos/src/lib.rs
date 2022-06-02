@@ -91,6 +91,6 @@ mod time;
 mod untrusted;
 mod util;
 mod vm;
-
+mod mage;
 // Export ECalls
 pub use entry::*;
