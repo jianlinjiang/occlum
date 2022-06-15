@@ -5,9 +5,9 @@ use super::*;
 mod consts;
 
 use self::consts::*;
+use mage::*;
 use util::mem_util::from_user::*;
 use util::sgx::*;
-
 extern "C" {
     static EDMM_supported: i32;
 }
@@ -246,6 +246,24 @@ impl DevSgx {
                     slice.copy_from_slice(&supplemental_data);
                 }
             }
+            SGX_CMD_NUM_DERIVE_MAGE_MEASUREMENT => {
+                let arg = nonbuiltin_cmd.arg_mut::<IoctlMageDeriveMrenclaveArg>()?;
+                let mage_idx = arg.mage_idx;
+                let ret = sgx_mage_derive_measurement(mage_idx);
+                match ret {
+                    Ok(hash) => {
+                        let mrenclave_slice = Some(unsafe {
+                            std::slice::from_raw_parts_mut(arg.mrencalve, SHA256_DIGEST_SIZE)
+                        });
+                        if let Some(slice) = mrenclave_slice {
+                            slice.copy_from_slice(&hash[..]);
+                        }
+                    }
+                    Err(e) => {
+                        return_errno!(EINVAL, "can't derive measurement");
+                    }
+                }
+            }
             _ => {
                 return_errno!(ENOSYS, "unknown ioctl cmd for /dev/sgx");
             }
@@ -303,4 +321,10 @@ struct IoctlVerDCAPQuoteArg {
     quote_verification_result: *mut sgx_ql_qv_result_t, // Output
     supplemental_data_size: u32,                        // Input (optional)
     supplemental_data: *mut u8,                         // Output (optional)
+}
+
+#[repr(C)]
+struct IoctlMageDeriveMrenclaveArg {
+    mage_idx: usize,    // Input
+    mrencalve: *mut u8, // Output
 }

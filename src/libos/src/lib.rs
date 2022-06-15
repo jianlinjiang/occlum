@@ -83,6 +83,7 @@ mod exception;
 mod fs;
 mod interrupt;
 mod ipc;
+mod mage;
 mod misc;
 mod net;
 mod process;
@@ -93,6 +94,5 @@ mod time;
 mod untrusted;
 mod util;
 mod vm;
-
 // Export ECalls
 pub use entry::*;

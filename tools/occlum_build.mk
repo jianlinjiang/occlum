@@ -46,13 +46,13 @@ ALL_TARGETS := $(SIGNED_ENCLAVE) $(BIN_LINKS) $(LIB_LINKS)
 all: $(ALL_TARGETS)
 
 $(SIGNED_ENCLAVE): $(LIBOS)
-	@echo "Signing the enclave..."
+	@echo "Please sign the enclave manually..."
 
-	@$(ENCLAVE_SIGN_TOOL) sign \
-		-key $(ENCLAVE_SIGN_KEY) \
-		-config "$(instance_dir)/build/Enclave.xml" \
-		-enclave "$(instance_dir)/build/lib/libocclum-libos.so.$(major_ver)" \
-		-out "$(instance_dir)/build/lib/libocclum-libos.signed.so"
+	# @$(ENCLAVE_SIGN_TOOL) sign \
+	# 	-key $(ENCLAVE_SIGN_KEY) \
+	# 	-config "$(instance_dir)/build/Enclave.xml" \
+	# 	-enclave "$(instance_dir)/build/lib/libocclum-libos.so.$(major_ver)" \
+	# 	-out "$(instance_dir)/build/lib/libocclum-libos.signed.so"
 
 $(LIBOS): $(instance_dir)/build/.Occlum_sys.json.protected
 	@echo "Building libOS..."
