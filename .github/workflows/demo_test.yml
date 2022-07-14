@@ -271,18 +271,7 @@ jobs:
       run: docker exec ${{ github.job }} bash -c "cd /root/occlum/demos/pytorch; ./install_python_with_conda.sh"
 
     - name: Run pytorch test
-      run: docker exec -d ${{ github.job }} bash -c "cd /root/occlum/demos/pytorch; SGX_MODE=SIM ./run_pytorch_on_occlum.sh 2>&1 | tee /root/occlum/log"
-
-    # FIXME: PyTorch can't exit normally in SIM mode
-    - name: Kill the container
-      run: |
-        sleep 360;
-        cat "$GITHUB_WORKSPACE/log";
-        if grep -q Done "$GITHUB_WORKSPACE/log"; then
-          docker stop ${{ github.job }}
-        else
-          exit 1
-        fi
+      run: docker exec ${{ github.job }} bash -c "cd /root/occlum/demos/pytorch; SGX_MODE=SIM ./run_pytorch_on_occlum.sh"
 
 
   Tensorflow_test:
@@ -315,6 +304,10 @@ jobs:
     - name: Create container
       run: docker run -itd --name=${{ github.job }} -v $GITHUB_WORKSPACE:/root/occlum occlumbackup/occlum:latest-ubuntu20.04-grpc
 
+    - uses: ./.github/workflows/composite_action/prebuild
+      with:
+        container-name: ${{ github.job }}
+
     - name: Build dependencies
       run: docker exec ${{ github.job }} bash -c "cd /root/occlum; make submodule"
 
@@ -342,6 +335,10 @@ jobs:
 
     - name: Create container
       run: docker run -itd --name=${{ github.job }} -v $GITHUB_WORKSPACE:/root/occlum occlumbackup/occlum:latest-ubuntu20.04-grpc
+
+    - uses: ./.github/workflows/composite_action/prebuild
+      with:
+        container-name: ${{ github.job }}
 
     - name: Build dependencies
       run: docker exec ${{ github.job }} bash -c "cd /root/occlum; make submodule"
@@ -405,6 +402,10 @@ jobs:
     - name: Create container
       run: docker run -itd --name=${{ github.job }} -v $GITHUB_WORKSPACE:/root/occlum occlumbackup/occlum:latest-ubuntu20.04-openvino
 
+    - uses: ./.github/workflows/composite_action/prebuild
+      with:
+        container-name: ${{ github.job }}
+
     - name: Build dependencies
       run: docker exec ${{ github.job }} bash -c "cd /root/occlum; make submodule"
 
@@ -424,6 +425,10 @@ jobs:
         submodules: true
     - name: Create container
       run: docker run -itd --name=${{ github.job }} -v $GITHUB_WORKSPACE:/root/occlum occlumbackup/occlum:latest-ubuntu20.04-python
+
+    - uses: ./.github/workflows/composite_action/prebuild
+      with:
+        container-name: ${{ github.job }}
 
     - name: Build dependencies
       run: docker exec ${{ github.job }} bash -c "cd /root/occlum; make submodule"
@@ -663,6 +668,10 @@ jobs:
         docker pull occlumbackup/occlum:latest-ubuntu20.04-gvisor_test
         gvisor_test=$(docker run -itd -v $GITHUB_WORKSPACE:/root/occlum occlumbackup/occlum:latest-ubuntu20.04-gvisor_test);
         echo "gvisor_test=$gvisor_test" >> $GITHUB_ENV
+
+    - uses: ./.github/workflows/composite_action/prebuild
+      with:
+        container-name: $gvisor_test
 
     - name: Build dependencies
       run: docker exec $gvisor_test bash -c "cd /root/occlum; make submodule"
