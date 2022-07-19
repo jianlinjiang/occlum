@@ -39,20 +39,19 @@ define get_occlum_file_mac
 		"$(occlum_dir)/build/bin/occlum-protect-integrity" show-mac $(1) $(2)
 endef
 
-.PHONY : all clean
+.PHONY : build clean genmage signmage
 
-ALL_TARGETS := $(SIGNED_ENCLAVE) $(BIN_LINKS) $(LIB_LINKS)
+# ALL_TARGETS := 
 
-all: $(ALL_TARGETS)
+build: $(SIGNED_ENCLAVE) $(BIN_LINKS) $(LIB_LINKS)
 
 $(SIGNED_ENCLAVE): $(LIBOS)
-	@echo "Please sign the enclave manually..."
 
-	# @$(ENCLAVE_SIGN_TOOL) sign \
-	# 	-key $(ENCLAVE_SIGN_KEY) \
-	# 	-config "$(instance_dir)/build/Enclave.xml" \
-	# 	-enclave "$(instance_dir)/build/lib/libocclum-libos.so.$(major_ver)" \
-	# 	-out "$(instance_dir)/build/lib/libocclum-libos.signed.so"
+	@$(ENCLAVE_SIGN_TOOL) sign \
+		-key $(ENCLAVE_SIGN_KEY) \
+		-config "$(instance_dir)/build/Enclave.xml" \
+		-enclave "$(instance_dir)/build/lib/libocclum-libos.so.$(major_ver)" \
+		-out "$(instance_dir)/build/lib/libocclum-libos.signed.so"
 
 $(LIBOS): $(instance_dir)/build/.Occlum_sys.json.protected
 	@echo "Building libOS..."
@@ -141,3 +140,21 @@ endif
 
 clean:
 	rm -rf $(instance_dir)/build
+
+genmage: 
+	@echo "genmage for occlum instance..."
+	@$(ENCLAVE_SIGN_TOOL) genmage \
+		-key $(ENCLAVE_SIGN_KEY) \
+		-config "$(instance_dir)/build/Enclave.xml" \
+		-enclave "$(instance_dir)/build/lib/libocclum-libos.so.$(major_ver)" \
+		-out "$(instance_dir)/build/lib/libocclum-libos.signed.so" \
+		-mageout "$(ENCLAVE_MAGE_OUT)"
+
+signmage:
+	@echo "signmage for occlum instance..."
+	@$(ENCLAVE_SIGN_TOOL) signmage \
+		-key $(ENCLAVE_SIGN_KEY) \
+		-config "$(instance_dir)/build/Enclave.xml" \
+		-enclave "$(instance_dir)/build/lib/libocclum-libos.so.$(major_ver)" \
+		-out "$(instance_dir)/build/lib/libocclum-libos.signed.so" \
+		-magein "$(ENCLAVE_MAGE_IN)"

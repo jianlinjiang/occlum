@@ -6,7 +6,7 @@ use sgx_trts::libc::memcpy;
 use sgx_types::*;
 use std::convert::TryInto;
 const SGX_MAGE_SEC_SIZE: usize = 4096;
-const SGX_MAGE_ENTRY_SIZE: usize = 48;
+const SGX_MAGE_ENTRY_SIZE: usize = 64;
 
 const HANDLE_HASH_OFFSET: isize = 168;
 const HANDLE_SIZE_OFFSET: isize = 152;
@@ -25,22 +25,41 @@ static SGX_MAGE_BUF: Aligned<A4096, [u8; SGX_MAGE_SEC_SIZE]> = Aligned([0; SGX_M
 struct SgxMageEntry {
     pub size: u64,
     pub offset: u64,
+    pub isv_svn: u64,
+    pub isv_prodid: u64,
     pub digest: [u8; 32],
+}
+
+pub fn sgx_mage_derive_measurement_by_isvinfo(
+    isv_svn: u64,
+    isv_prodid: u64,
+) -> SgxResult<sgx_sha256_hash_t> {
+    let mage_buf = std::hint::black_box(&SGX_MAGE_BUF);
+    let entry_size_buf = &mage_buf[0..8];
+    let mage_entry_num = usize::from_le_bytes(entry_size_buf.try_into().unwrap());
+    let found: bool = false;
+    for i in 0..mage_entry_num {
+        let entry_data = &mage_buf[i * SGX_MAGE_ENTRY_SIZE + 8..(i + 1) * SGX_MAGE_ENTRY_SIZE + 8];
+        let mage_isv_svn = u64::from_le_bytes(entry_data[16..24].try_into().unwrap());
+        let mage_isv_prodid = u64::from_le_bytes(entry_data[24..32].try_into().unwrap());
+        if mage_isv_svn == isv_svn && mage_isv_prodid == isv_prodid {
+            return sgx_mage_derive_measurement(i);
+        }
+    }
+    return Err(sgx_status_t::SGX_ERROR_INVALID_PARAMETER);
 }
 
 pub fn sgx_mage_derive_measurement(mage_idx: usize) -> SgxResult<sgx_sha256_hash_t> {
     let mage_buf = std::hint::black_box(&SGX_MAGE_BUF);
-    let entry_size_buf = &SGX_MAGE_BUF[0..8];
-    let mage_entry_num = u64::from_le_bytes(entry_size_buf.try_into().unwrap());
-    error!("{:02x?}", entry_size_buf);
-    error!("{}", mage_entry_num);
-    if (mage_idx + 1) * SGX_MAGE_ENTRY_SIZE >= SGX_MAGE_SEC_SIZE {
+    let entry_size_buf = &mage_buf[0..8];
+    let mage_entry_num = usize::from_le_bytes(entry_size_buf.try_into().unwrap());
+    if (mage_idx + 1) * SGX_MAGE_ENTRY_SIZE >= SGX_MAGE_SEC_SIZE || mage_idx >= mage_entry_num {
         error!("mage_idx {} is out of range", mage_idx);
         return Err(sgx_status_t::SGX_ERROR_INVALID_PARAMETER);
     }
 
     let entry_data =
-        &SGX_MAGE_BUF[mage_idx * SGX_MAGE_ENTRY_SIZE + 8..(mage_idx + 1) * SGX_MAGE_ENTRY_SIZE + 8];
+        &mage_buf[mage_idx * SGX_MAGE_ENTRY_SIZE + 8..(mage_idx + 1) * SGX_MAGE_ENTRY_SIZE + 8];
 
     let size = u64::from_le_bytes(entry_data[0..8].try_into().unwrap());
     if size == 0 {
@@ -51,15 +70,13 @@ pub fn sgx_mage_derive_measurement(mage_idx: usize) -> SgxResult<sgx_sha256_hash
     let offset = u64::from_le_bytes(entry_data[8..16].try_into().unwrap());
 
     let mut digest = [0u8; 32];
-    digest.copy_from_slice(&entry_data[16..]);
+    digest.copy_from_slice(&entry_data[32..]);
 
     let mut sha_handle: sgx_sha_state_handle_t = ptr::null_mut() as sgx_sha_state_handle_t;
 
     let mut ret = unsafe { sgx_sha256_init(&mut sha_handle as *mut sgx_sha_state_handle_t) };
     match ret {
-        sgx_status_t::SGX_SUCCESS => {
-            error!("sgx_sha256_init success");
-        }
+        sgx_status_t::SGX_SUCCESS => {}
         _ => {
             error!("sgx_sha256_init error, {:02x?}", ret);
             return Err(ret);

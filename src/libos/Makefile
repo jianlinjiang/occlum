@@ -139,6 +139,10 @@ ifeq ($(SGX_MODE), HYPER)
     LIBOS_FEATURES += hyper_mode
 endif
 
+ifeq ($(SGX_MAGE), 1)
+		LIBOS_FEATURES += mage
+endif
+
 # Release build is for production use. We enable code coverage only for debug
 # build.  It also simplifies the implementation as the release and debug build
 # have different output paths.

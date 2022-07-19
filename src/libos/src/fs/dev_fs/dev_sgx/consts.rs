@@ -70,6 +70,7 @@ pub const SGX_CMD_NUM_VER_DCAP_QUOTE: u32 = StructuredIoctlNum::new::<IoctlVerDC
 )
 .as_u32();
 
+#[cfg(feature = "mage")]
 pub const SGX_CMD_NUM_DERIVE_MAGE_MEASUREMENT: u32 =
     StructuredIoctlNum::new::<IoctlMageDeriveMrenclaveArg>(
         11,

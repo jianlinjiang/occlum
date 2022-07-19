@@ -83,6 +83,7 @@ mod exception;
 mod fs;
 mod interrupt;
 mod ipc;
+#[cfg(feature = "mage")]
 mod mage;
 mod misc;
 mod net;

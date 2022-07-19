@@ -62,7 +62,7 @@ Usage:
     occlum init
         Initialize a directory as the Occlum instance.
 
-    occlum build [--sign-key <key_path>] [--sign-tool <tool_path>] [--image-key <key_path>] [--buildin-image-key] [-f/--force]
+    occlum build [--sign-key <key_path>] [--sign-tool <tool_path>] [--image-key <key_path>] [--buildin-image-key] [-f/--force] [--genamage <mage_out>] [--signmage <mage_in>]
         Build and sign an Occlum SGX enclave (.so) and generate its associated secure
         FS image according to the user-provided image directory and Occlum.json config file.
         The whole building process is incremental: the building artifacts are built only
@@ -268,6 +268,8 @@ cmd_build() {
         --image-key)    [ -n "$2" ] && SECURE_IMAGE_KEY=$2 ; shift 2 || exit_error "empty secure image key path"   ;;
         --buildin-image-key)  BUILDIN_IMAGE_KEY=true ; shift ;;
         --force | -f)   MAKE_OPTION="clean" ; shift ;;
+        --genmage)      [ -n "$2" ] && ENCLAVE_MAGE_OUT=$2 ; shift 2 || exit_error "empty genemage output file"   ;;
+        --signmage)     [ -n "$2" ] && ENCLAVE_MAGE_IN=$2 ; shift 2 || exit_error "empty signmage input file" ;;
         *) exit_error "Unknown option: $1"                                                                      ;;
         esac
     done
@@ -311,11 +313,29 @@ cmd_build() {
         occlum_dir=$occlum_dir instance_dir=$instance_dir \
         make -f $build_makefile $MAKE_OPTION
     fi
+
+    if [[ -n $ENCLAVE_MAGE_IN ]]; then
+        occlum_dir=$occlum_dir instance_dir=$instance_dir major_ver=$major_ver  occlum_version=$occlum_version ENCLAVE_MAGE_IN=$ENCLAVE_MAGE_IN ENCLAVE_SIGN_KEY=$ENCLAVE_SIGN_KEY ENCLAVE_SIGN_TOOL=$ENCLAVE_SIGN_TOOL make -f $build_makefile "signmage"
+        echo "Sign mage for the Occlum enclave successfully"
+        mkdir -p "$instance_dir/run/mount/__ROOT"
+        mkdir -p "$instance_dir/run/initfs/__ROOT"
+        exit 0
+    fi
+
+    if [[ -n $ENCLAVE_MAGE_OUT ]]; then 
+        MAGE_OPTION="genmage"
+        occlum_dir=$occlum_dir instance_dir=$instance_dir major_ver=$major_ver  occlum_version=$occlum_version ENCLAVE_MAGE_OUT=$ENCLAVE_MAGE_OUT ENCLAVE_SIGN_KEY=$ENCLAVE_SIGN_KEY ENCLAVE_SIGN_TOOL=$ENCLAVE_SIGN_TOOL make -f $build_makefile "genmage"
+        echo "Generate mage for the Occlum enclave successfully"
+        mkdir -p "$instance_dir/run/mount/__ROOT"
+        mkdir -p "$instance_dir/run/initfs/__ROOT"
+        exit 0
+    fi
+
     occlum_dir=$occlum_dir instance_dir=$instance_dir pal_lib=$pal_lib major_ver=$major_ver \
     occlum_version=$occlum_version libos_lib=$libos_lib \
     ENCLAVE_SIGN_KEY=$ENCLAVE_SIGN_KEY ENCLAVE_SIGN_TOOL=$ENCLAVE_SIGN_TOOL \
     SECURE_IMAGE_KEY=$SECURE_IMAGE_KEY BUILDIN_IMAGE_KEY=$BUILDIN_IMAGE_KEY \
-    make -f $build_makefile --no-builtin-rules
+    make -f $build_makefile "build"
 
     cd "$instance_dir"
     echo "built" > $status_file

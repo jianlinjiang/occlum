@@ -7,7 +7,8 @@
 #include <iostream>
 #include <cstring>
 typedef struct {
-    const uint64_t idx;
+    const uint64_t isv_svn;
+    const uint64_t isv_prodid;
     uint8_t *mrenclave;
 } sgxioc_mage_derive_mrenclave_arg_t;
 
@@ -24,6 +25,7 @@ typedef struct
 
 int main(int argc, char* argv[]) {
     // open sgx driver
+    printf("\n");
     int sgx_fd; 
     if ( (sgx_fd = open("/dev/sgx", O_RDONLY)) < 0) {
         perror("Can't open sgx device.");
@@ -55,18 +57,21 @@ int main(int argc, char* argv[]) {
     printf("\n");
 
     uint8_t other_mrenclave[32];
-    const char* index = argv[1];
-    uint64_t idx = std::stoi(index);
-    printf("%lu", idx);
+    const char* isv_svn_arg = argv[1];
+    const char* isv_prodid_arg = argv[2];
+    uint64_t isv_svn = std::stoi(isv_svn_arg);
+    uint64_t isv_prodid = std::stoi(isv_prodid_arg);
+    printf("Get mrenclave of isv_svn: %lu, isv_prodid %lu\n", isv_svn, isv_prodid);
     sgxioc_mage_derive_mrenclave_arg_t mage_derive_arg {
-        .idx = idx,
+        .isv_svn = isv_svn,
+        .isv_prodid = isv_prodid,
         .mrenclave = other_mrenclave
     };
     if (ioctl(sgx_fd, SGXIOC_MAGE_DERIVE_MRENCLAVE, &mage_derive_arg) < 0) {
         perror("Can't derive mrenclave report.");
         return -1;
     }
-    printf("the other mrenclave: ");
+    printf("the target enclave's mrenclave: ");
     for(int i = 0; i < 32; i++) 
         printf("%02x", other_mrenclave[i]);
     printf("\n");

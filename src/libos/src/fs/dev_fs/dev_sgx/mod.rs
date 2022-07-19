@@ -5,6 +5,7 @@ use super::*;
 mod consts;
 
 use self::consts::*;
+#[cfg(feature = "mage")]
 use mage::*;
 use util::mem_util::from_user::*;
 use util::sgx::*;
@@ -246,10 +247,13 @@ impl DevSgx {
                     slice.copy_from_slice(&supplemental_data);
                 }
             }
+            #[cfg(feature = "mage")]
             SGX_CMD_NUM_DERIVE_MAGE_MEASUREMENT => {
                 let arg = nonbuiltin_cmd.arg_mut::<IoctlMageDeriveMrenclaveArg>()?;
-                let mage_idx = arg.mage_idx;
-                let ret = sgx_mage_derive_measurement(mage_idx);
+                // let mage_idx = arg.mage_idx;
+                let isv_svn = arg.isv_svn;
+                let isv_prodid = arg.isv_prodid;
+                let ret = sgx_mage_derive_measurement_by_isvinfo(isv_svn, isv_prodid);
                 match ret {
                     Ok(hash) => {
                         let mrenclave_slice = Some(unsafe {
@@ -323,8 +327,10 @@ struct IoctlVerDCAPQuoteArg {
     supplemental_data: *mut u8,                         // Output (optional)
 }
 
+#[cfg(feature = "mage")]
 #[repr(C)]
 struct IoctlMageDeriveMrenclaveArg {
-    mage_idx: usize,    // Input
+    isv_svn: u64,       // Input
+    isv_prodid: u64,    // Input
     mrencalve: *mut u8, // Output
 }
